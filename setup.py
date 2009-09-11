@@ -6,7 +6,7 @@ setup(
     name='django-mailer-2',
     version=get_version(),
     description=("A reusable Django app for queueing the sending of email "
-                 "(forked from James Tauber's django-mailer"),
+                 "(forked from James Tauber's django-mailer)"),
     long_description=open('docs/usage.txt').read(),
     author='Chris Beaven',
     author_email='jtauber@jtauber.com',
