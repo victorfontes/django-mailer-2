@@ -1,55 +1,55 @@
 from datetime import datetime
-
 from django.db import models
-
+from mailer import constants
 
 PRIORITIES = (
-    ('1', 'high'),
-    ('2', 'medium'),
-    ('3', 'low'),
-    ('4', 'deferred'),
+    (constants.PRIORITY_HIGH, 'high'),
+    (constants.PRIORITY_NORMAL, 'normal'),
+    (constants.PRIORITY_LOW, 'low'),
 )
 
 
 
 class MessageManager(models.Manager):
-    
     def high_priority(self):
         """
-        the high priority messages in the queue
-        """
+        Return a QuerySet of high priority queued messages.
         
-        return self.filter(priority='1')
+        """
+        return self.filter(priority=constants.PRIORITY_HIGH)
     
-    def medium_priority(self):
+    def normal_priority(self):
         """
-        the medium priority messages in the queue
-        """
+        Return a QuerySet of normal priority queued messages.
         
-        return self.filter(priority='2')
+        """
+        return self.filter(priority=constants.PRIORITY_NORMAL)
     
     def low_priority(self):
         """
-        the low priority messages in the queue
-        """
+        Return a QuerySet of low priority queued messages.
         
-        return self.filter(priority='3')
+        """
+        return self.filter(priority=constants.PRIORITY_LOW)
     
     def non_deferred(self):
         """
-        the messages in the queue not deferred
-        """
+        Return a QuerySet containing all non-deferred queued messages.
         
-        return self.filter(priority__lt='4')
+        """
+        return self.exclude(priority=constants.PRIORITY_DEFERRED)
     
     def deferred(self):
         """
-        the deferred messages in the queue
+        Return a QuerySet of all deferred messages in the queue.
+        
         """
+        return self.filter(priority=constants.PRIORITY_DEFERRED)
     
-        return self.filter(priority='4')
-    
-    def retry_deferred(self, new_priority=2):
+    def retry_deferred(self, new_priority=constants.PRIORITY_NORMAL):
+        """
+        Set all 
+        """
         count = 0
         for message in self.deferred():
             if message.retry(new_priority):
@@ -66,22 +66,27 @@ class Message(models.Model):
     subject = models.CharField(max_length=100)
     message_body = models.TextField()
     when_added = models.DateTimeField(default=datetime.now)
-    priority = models.CharField(max_length=1, choices=PRIORITIES, default='2')
+    priority = models.PositiveSmallIntegerField(choices=PRIORITIES,
+                                            default=constants.PRIORITY_NORMAL)
+    deferred = models.BooleanField()
     # @@@ campaign?
     # @@@ content_type?
     
-    def defer(self):
-        self.priority = '4'
-        self.save()
-    
-    def retry(self, new_priority=2):
-        if self.priority == '4':
-            self.priority = new_priority
+    def defer(self, save=True):
+        self.deferred = True
+        if save:
             self.save()
-            return True
-        else:
-            return False
     
+    def retry(self, new_priority=None, save=True):
+        if not self.deferred:
+            return False
+        self.deferred = False
+        if new_priority is not None:
+            self.priority = new_priority
+        if save: 
+            self.save()
+        return True
+
 
 class DontSendEntryManager(models.Manager):
     
@@ -111,10 +116,9 @@ class DontSendEntry(models.Model):
     
 
 RESULT_CODES = (
-    ('1', 'success'),
-    ('2', 'don\'t send'),
-    ('3', 'failure'),
-    # @@@ other types of failure?
+    (constants.RESULT_SENT, 'success'),
+    (constants.RESULT_SKIPPED, 'not sent (opt out)'),
+    (constants.RESULT_FAILED, 'failure'),
 )
 
 
@@ -151,11 +155,10 @@ class MessageLog(models.Model):
     subject = models.CharField(max_length=100)
     message_body = models.TextField()
     when_added = models.DateTimeField()
-    priority = models.CharField(max_length=1, choices=PRIORITIES)
+    priority = models.PositiveSmallIntegerField(choices=PRIORITIES)
     # @@@ campaign?
     
     # additional logging fields
     when_attempted = models.DateTimeField(default=datetime.now)
-    result = models.CharField(max_length=1, choices=RESULT_CODES)
+    result = models.PositiveSmallIntegerField(choices=RESULT_CODES)
     log_message = models.TextField()
-    

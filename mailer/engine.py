@@ -1,13 +1,13 @@
-import time
-import smtplib
-import logging
-from lockfile import FileLock, AlreadyLocked, LockTimeout
-from socket import error as socket_error
-
-from mailer.models import Message, DontSendEntry, MessageLog
-
 from django.conf import settings
 from django.core.mail import send_mail as core_send_mail
+from lockfile import FileLock, AlreadyLocked, LockTimeout
+from mailer import constants
+from mailer.models import Message, DontSendEntry, MessageLog
+from socket import error as socket_error
+import logging
+import smtplib
+import time
+
 
 # when queue is empty, how long to wait (in seconds) before checking again
 EMPTY_QUEUE_SLEEP = getattr(settings, "MAILER_EMPTY_QUEUE_SLEEP", 30)
@@ -63,20 +63,20 @@ def send_all():
         for message in prioritize():
             if DontSendEntry.objects.has_address(message.to_address):
                 logging.info("skipping email to %s as on don't send list " % message.to_address)
-                MessageLog.objects.log(message, 2) # @@@ avoid using literal result code
+                MessageLog.objects.log(message, constants.RESULT_SKIPPED)
                 message.delete()
                 dont_send += 1
             else:
                 try:
                     logging.info("sending message '%s' to %s" % (message.subject.encode("utf-8"), message.to_address.encode("utf-8")))
                     core_send_mail(message.subject, message.message_body, message.from_address, [message.to_address])
-                    MessageLog.objects.log(message, 1) # @@@ avoid using literal result code
+                    MessageLog.objects.log(message, constants.RESULT_SENT)
                     message.delete()
                     sent += 1
                 except (socket_error, smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused, smtplib.SMTPAuthenticationError), err:
                     message.defer()
                     logging.info("message deferred due to failure: %s" % err)
-                    MessageLog.objects.log(message, 3, log_message=str(err)) # @@@ avoid using literal result code
+                    MessageLog.objects.log(message, constants.RESULT_SKIPPED, log_message=str(err))
                     deferred += 1
     finally:
         logging.debug("releasing lock...")
