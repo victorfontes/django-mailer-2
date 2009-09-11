@@ -1,4 +1,3 @@
-django-mailer by James Tauber <http://jtauber.com/>
-http://code.google.com/p/django-mailer/
+django-mailer-2 by Chris Beaven (a fork of James Tauber's django-mailer)
 
 A reusable Django app for queuing the sending of email

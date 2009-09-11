@@ -1,6 +1,6 @@
 import logging
 from django.core.management.base import NoArgsCommand
-from mailer.models import Message
+from django_mailer.models import Message
 
 class Command(NoArgsCommand):
     help = 'Attempt to resend any deferred mail.'
