@@ -1,12 +1,12 @@
-import logging
-
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
-
 from django_mailer.engine import send_all
+import logging
 
-# allow a sysadmin to pause the sending of mail temporarily.
+
+# Provide a way of temporarily pausing the sending of mail.
 PAUSE_SEND = getattr(settings, "MAILER_PAUSE_SEND", False)
+
 
 class Command(NoArgsCommand):
     help = 'Do one pass through the mail queue, attempting to send all mail.'
@@ -18,4 +18,4 @@ class Command(NoArgsCommand):
         if not PAUSE_SEND:
             send_all()
         else:
-            logging.info("sending is paused, quitting.")
+            logging.info("Sending is paused, exiting.")

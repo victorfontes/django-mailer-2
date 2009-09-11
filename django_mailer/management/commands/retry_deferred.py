@@ -1,11 +1,12 @@
-import logging
 from django.core.management.base import NoArgsCommand
-from django_mailer.models import Message
+from django_mailer import models
+import logging
+
 
 class Command(NoArgsCommand):
     help = 'Attempt to resend any deferred mail.'
     
     def handle_noargs(self, **options):
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-        count = Message.objects.retry_deferred() # @@@ new_priority not yet supported
-        logging.info("%s message(s) retried" % count)
+        count = models.QueuedMessage.objects.retry_deferred()
+        logging.info("%s message(s) removed from deferred" % count)
