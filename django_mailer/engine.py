@@ -80,31 +80,31 @@ def send_loop(empty_queue_sleep=None):
 
 def send_message(queued_message, smtp_connection=None, blacklist=None,
                  log=True):
+    message = queued_message.message
     if smtp_connection is None:
         smtp_connection = SMTPConnection()
     opened_connection = False
 
     if blacklist is None:
-        blacklisted = models.Blacklist.objects.filter(
-                                            email=queued_message.to_address)
+        blacklisted = models.Blacklist.objects.filter(email=message.to_address)
     else:
-        blacklisted = queued_message.to_address in blacklist
+        blacklisted = message.to_address in blacklist
 
-    log_message = None
+    log_message = ''
     if blacklisted:
         logging.info("Not sending to blacklisted email: %s" %
-                     queued_message.to_address.encode("utf-8"))
+                     message.to_address.encode("utf-8"))
         queued_message.delete()
         result = constants.RESULT_SKIPPED
     else:
         try:
             logging.info("Sending message to %s: %s" %
-                         (queued_message.to_address.encode("utf-8"),
-                          queued_message.subject.encode("utf-8")))
+                         (message.to_address.encode("utf-8"),
+                          message.subject.encode("utf-8")))
             opened_connection = smtp_connection.open()
-            smtp_connection.connection.sendmail(queued_message.from_address,
-                                                [queued_message.to_address],
-                                                queued_message.encoded_message)
+            smtp_connection.connection.sendmail(message.from_address,
+                                                [message.to_address],
+                                                message.encoded_message)
             queued_message.delete()
             result = constants.RESULT_SENT
         except (SocketError, smtplib.SMTPSenderRefused,
@@ -112,12 +112,12 @@ def send_message(queued_message, smtp_connection=None, blacklist=None,
                 smtplib.SMTPAuthenticationError), err:
             queued_message.defer()
             logging.info("Message to %s deferred due to failure: %s" %
-                         (queued_message.to_address.encode("utf-8"), err))
+                         (message.to_address.encode("utf-8"), err))
             log_message = unicode(err)
             result = constants.RESULT_FAILED
     if log:
-        models.Log.objects.create(queued_message=queued_message.message,
-                                  result=result, log_message=log_message)
+        models.Log.objects.create(message=message, result=result,
+                                  log_message=log_message)
 
     if opened_connection:
         smtp_connection.close()
