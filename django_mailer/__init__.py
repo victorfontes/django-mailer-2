@@ -26,7 +26,7 @@ def send_mail(subject, message, from_email, recipient_list,
 
     subject = force_unicode(subject)
     email_message = EmailMessage(subject, message, from_email,
-                                 recipient_list).send()
+                                 recipient_list)
     queue_email_message(email_message, priority=priority)
 
 
