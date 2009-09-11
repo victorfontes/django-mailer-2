@@ -83,7 +83,7 @@ def queue_email_message(email_message, priority=None):
     count = 0
     for to_email in email_message.recipients():
         message = models.Message.objects.create(
-            to_address=to_email, from_address=email_message.recipients,
+            to_address=to_email, from_address=email_message.from_email,
             subject=email_message.subject,
             encoded_message=email_message.message().as_string())
         queued_message = models.QueuedMessage(message=message)
