@@ -31,14 +31,14 @@ class QueueManager(models.Manager):
         Return a QuerySet containing all non-deferred queued messages.
         
         """
-        return self.filter(deferred=False)
+        return self.filter(deferred=None)
 
     def deferred(self):
         """
         Return a QuerySet of all deferred messages in the queue.
         
         """
-        return self.filter(deferred=True)
+        return self.exclude(deferred=None)
 
     def retry_deferred(self, new_priority=None):
         """
