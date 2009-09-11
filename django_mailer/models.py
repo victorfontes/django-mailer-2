@@ -44,6 +44,10 @@ class QueuedMessage(models.Model):
     class Meta:
         ordering = ('priority', 'date_queued')
 
+    def defer(self):
+        self.deferred = datetime.datetime.now()
+        self.save()
+
 
 class Blacklist(models.Model):
     email = models.EmailField(max_length=200)
