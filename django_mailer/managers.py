@@ -47,7 +47,7 @@ class QueueManager(models.Manager):
         
         """
         count = self.deferred().count()
-        update_kwargs = dict(deferred=False)
+        update_kwargs = dict(deferred=False, retries=models.F('retries')+1)
         if new_priority is not None:
             update_kwargs['priority'] = new_priority
         self.deferred().update(**update_kwargs)
