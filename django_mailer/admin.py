@@ -6,16 +6,37 @@ class Message(admin.ModelAdmin):
     list_display = ('to_address', 'subject', 'date_created')
 
 
-class QueuedMessage(admin.ModelAdmin):
+class MessageRelatedModelAdmin(admin.ModelAdmin):
+    list_select_related = True
+
+    def message__to_address(self, obj):
+        return obj.message.to_address
+    message__to_address.admin_order_field = 'message__to_address'
+
+    def message__subject(self, obj):
+        return obj.message.subject
+    message__subject.admin_order_field = 'message__subject'
+
+    def message__date_created(self, obj):
+        return obj.message.to_address
+    message__date_created.admin_order_field = 'message__date_created'
+
+
+class QueuedMessage(MessageRelatedModelAdmin):
+    def not_deferred(self, obj):
+        return not obj.deferred
+    not_deferred.boolean = True
+    not_deferred.admin_order_field = 'deferred'
+
     list_display = ('id', 'message__to_address', 'message__subject',
-                    'message__date_created', 'priority')
+                    'message__date_created', 'priority', 'not_deferred')
 
 
 class Blacklist(admin.ModelAdmin):
     list_display = ('email', 'date_added')
 
 
-class Log(admin.ModelAdmin):
+class Log(MessageRelatedModelAdmin):
     list_display = ('id', 'message__to_address', 'message__subject', 'date',
                     'result')
 
