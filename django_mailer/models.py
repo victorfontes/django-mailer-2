@@ -60,7 +60,7 @@ class Blacklist(models.Model):
 
 
 class Log(models.Model):
-    message = models.ForeignKey(Message)
+    message = models.ForeignKey(Message, editable=False)
     result = models.PositiveSmallIntegerField(choices=RESULT_CODES)
     date = models.DateTimeField(default=datetime.datetime.now)
     log_message = models.TextField()
