@@ -49,7 +49,7 @@ def send_all():
                 sent += 1
             elif result == constants.RESULT_FAILED:
                 deferred += 1
-            elif result == constants.RESULT_SENT:
+            elif result == constants.RESULT_SKIPPED:
                 skipped += 1
         connection.close()
     finally:
