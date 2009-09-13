@@ -43,6 +43,11 @@ def mail_admins(subject, message, fail_silently=False, priority=None):
     """
     from django.conf import settings
     from django.utils.encoding import force_unicode
+    from django_mailer import constants
+
+    if priority is None:
+        priority = getattr(settings, 'MAILER_MAIL_ADMINS_PRIORITY',
+                           constants.PRIORITY_HIGH)
 
     subject = settings.EMAIL_SUBJECT_PREFIX + force_unicode(subject)
     from_email = settings.SERVER_EMAIL
@@ -64,6 +69,9 @@ def mail_managers(subject, message, fail_silently=False, priority=None):
     from django.conf import settings
     from django.utils.encoding import force_unicode
 
+    if priority is None:
+        priority = getattr(settings, 'MAILER_MAIL_MANAGERS_PRIORITY', None)
+
     subject = settings.EMAIL_SUBJECT_PREFIX + force_unicode(subject)
     from_email = settings.SERVER_EMAIL
     recipient_list = [recipient[1] for recipient in settings.MANAGERS]
@@ -78,7 +86,10 @@ def queue_email_message(email_message, priority=None):
     ``EmailMessage`` class.
     
     """
-    from django_mailer import models
+    from django_mailer import constants, models
+    
+    if priority == constants.PRIORITY_EMAIL_NOW:
+        return email_message.send()
 
     count = 0
     for to_email in email_message.recipients():
