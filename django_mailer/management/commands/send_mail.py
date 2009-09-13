@@ -7,7 +7,7 @@ import logging
 
 # Provide a way of temporarily pausing the sending of mail.
 PAUSE_SEND = getattr(settings, "MAILER_PAUSE_SEND", False)
-
+LOGGING_LEVEL = {'0': logging.CRITICAL, '1': logging.INFO, '2': logging.DEBUG}
 
 class Command(NoArgsCommand):
     help = 'Iterate the mail queue, attempting to send all mail.'
@@ -18,11 +18,11 @@ class Command(NoArgsCommand):
                 'is being cleared).'),
     )
 
-    def handle_noargs(self, **options):
-        logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-        logging.info("-" * 72)
+    def handle_noargs(self, verbosity, block_size, **options):
+        logging.basicConfig(level=LOGGING_LEVEL[verbosity], format="%(message)s")
         # if PAUSE_SEND is turned on don't do anything.
         if not PAUSE_SEND:
-            send_all(options['block_size'])
+            send_all(block_size)
         else:
-            logging.info("Sending is paused, exiting.")
+            logging.warning("Sending is paused, exiting without sending "
+                            "queued mail.")

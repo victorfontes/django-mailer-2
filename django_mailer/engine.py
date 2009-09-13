@@ -91,10 +91,13 @@ def send_all(block_size=500):
         lock.release()
         logging.debug("Lock released.")
 
-    logging.info("")
-    logging.info("%s sent, %s deferred, %s skipped." % (sent, deferred,
-                                                        skipped))
-    logging.info("Completed in %.2f seconds." % (time.time() - start_time))
+    logging.debug("")
+    if sent or deferred or skipped:
+        log = logging.info
+    else:
+        log = logging.debug
+    log("%s sent, %s deferred, %s skipped." % (sent, deferred, skipped))
+    logging.debug("Completed in %.2f seconds." % (time.time() - start_time))
 
 
 def send_loop(empty_queue_sleep=None):
