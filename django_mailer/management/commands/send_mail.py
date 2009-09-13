@@ -19,7 +19,8 @@ class Command(NoArgsCommand):
     )
 
     def handle_noargs(self, verbosity, block_size, **options):
-        logging.basicConfig(level=LOGGING_LEVEL[verbosity], format="%(message)s")
+        logging.basicConfig(level=LOGGING_LEVEL[verbosity],
+                            format="%(message)s")
         # if PAUSE_SEND is turned on don't do anything.
         if not PAUSE_SEND:
             send_all(block_size)
