@@ -22,12 +22,37 @@ EMPTY_QUEUE_SLEEP = getattr(settings, "MAILER_EMPTY_QUEUE_SLEEP", 30)
 LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", -1)
 
 
-def send_all():
+def _message_queue(block_size):
+    """
+    A generator which iterates queued messages in blocks so that new
+    prioritised messages can be inserted during iteration of a large number of
+    queued messages.
+    
+    To avoid an infinite loop, yielded messages *must* be deleted or deferred.
+    
+    """
+    def get_block():
+        queue = models.QueuedMessage.objects.non_deferred().select_related()
+        if block_size:
+            queue = queue[:block_size]
+        return queue
+    queue = get_block()
+    while queue:
+        for message in queue:
+            yield message
+        queue = get_block()
+
+
+def send_all(block_size=500):
     """
     Send all non-deferred messages in the queue.
     
     A lock file is used to ensure that this process can not be started again
     while it is already running.
+    
+    The ``block_size`` argument allows for queued messages to be iterated in
+    blocks, allowing new prioritised messages to be inserted during iteration
+    of a large number of queued messages.
     
     """
     lock = FileLock("send_mail")
@@ -51,7 +76,7 @@ def send_all():
         connection = SMTPConnection()
         blacklist = models.Blacklist.objects.values_list('email', flat=True)
         connection.open()
-        for message in models.QueuedMessage.objects.non_deferred():
+        for message in _message_queue(block_size):
             result = send_message(message, smtp_connection=connection,
                                   blacklist=blacklist)
             if result == constants.RESULT_SENT:
