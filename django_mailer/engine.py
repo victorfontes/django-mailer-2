@@ -1,3 +1,9 @@
+"""
+The "engine room" of django mailer.
+
+Methods here actually handle the sending of queued messages.
+
+"""
 from django.conf import settings
 from django.core.mail import SMTPConnection
 from lockfile import FileLock, AlreadyLocked, LockTimeout
@@ -19,6 +25,9 @@ LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", -1)
 def send_all():
     """
     Send all non-deferred messages in the queue.
+    
+    A lock file is used to ensure that this process can not be started again
+    while it is already running.
     
     """
     lock = FileLock("send_mail")
@@ -68,6 +77,10 @@ def send_loop(empty_queue_sleep=None):
     Loop indefinitely, checking queue at intervals and sending and queued
     messages.
     
+    The interval (in seconds) can be provided as the ``empty_queue_sleep``
+    argument. The default is attempted to be retrieved from the
+    ``MAILER_EMPTY_QUEUE_SLEEP`` setting (or if not set, 30s is used).
+    
     """
     empty_queue_sleep = empty_queue_sleep or EMPTY_QUEUE_SLEEP
     while True:
@@ -80,6 +93,28 @@ def send_loop(empty_queue_sleep=None):
 
 def send_message(queued_message, smtp_connection=None, blacklist=None,
                  log=True):
+    """
+    Send a queued message, returning a response code as to the action taken.
+    
+    The response codes can be found in ``django_mailer.constants``. The
+    response will be either ``RESULT_SKIPPED`` for a blacklisted email,
+    ``RESULT_FAILED`` for a deferred message or ``RESULT_SENT`` for a
+    successful sent message.
+    
+    To allow optimizations if multiple messages are to be sent, an SMTP
+    connection can be provided and a list of blacklisted email addresses.
+    Otherwise an SMTP connection will be opened to send this message and the
+    email recipient address checked against the ``Blacklist`` table.
+    
+    If the message recipient is blacklisted, the message will be removed from
+    the queue without being sent. Otherwise, the message is attempted to be
+    sent with an SMTP failure resulting in the message being flagged as
+    deferred so it can be tried again later.
+    
+    By default, a log is created as to the action. Either way, the original
+    message is not deleted.
+    
+    """
     message = queued_message.message
     if smtp_connection is None:
         smtp_connection = SMTPConnection()
