@@ -37,8 +37,10 @@ class Blacklist(admin.ModelAdmin):
 
 
 class Log(MessageRelatedModelAdmin):
-    list_display = ('id', 'message__to_address', 'message__subject', 'date',
-                    'result')
+    list_display = ('id', 'result', 'message__to_address', 'message__subject',
+                    'date')
+    list_filter = ('result',)
+    list_display_links = ('id', 'result')
 
 
 admin.site.register(models.Message, Message)
