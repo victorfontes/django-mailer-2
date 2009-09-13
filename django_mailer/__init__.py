@@ -92,3 +92,35 @@ def queue_email_message(email_message, priority=None):
         queued_message.save()
         count += 1
     return count
+
+
+def queue_django_mail():
+    """
+    Monkey-patch the ``send`` method of Django's ``EmailMessage`` to just queue
+    the message rather than actually send it.
+    
+    """
+    from django.core.mail import EmailMessage
+
+    if EmailMessage.send == queue_email_message:
+        return False
+    EmailMessage._actual_send = EmailMessage.send
+    EmailMessage.send = queue_email_message
+    EmailMessage.send
+    return True
+
+
+def restore_django_mail():
+    """
+    Restore the original ``send`` method of Django's ``EmailMessage`` if it has
+    been monkey-patched (otherwise, no action is taken).
+    
+    """
+    from django.core.mail import EmailMessage
+
+    actual_send = getattr(EmailMessage, '_actual_send', None)
+    if not actual_send:
+        return False
+    EmailMessage.send = actual_send
+    del EmailMessage._actual_send
+    return True
