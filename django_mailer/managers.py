@@ -1,5 +1,6 @@
 from django.db import models
 from django_mailer import constants
+import datetime
 
 
 class QueueManager(models.Manager):
@@ -40,15 +41,26 @@ class QueueManager(models.Manager):
         """
         return self.exclude(deferred=None)
 
-    def retry_deferred(self, new_priority=None):
+    def retry_deferred(self, max_retries=None, new_priority=None):
         """
         Reset the deferred flag for all deferred messages so they will be
         retried.
         
+        If ``max_retries`` is set, deferred messages which have been retried
+        more than this many times will *not* have their deferred flag reset.
+        
+        If ``new_priority`` is ``None`` (default), deferred messages retain
+        their original priority level. Otherwise all reset deferred messages
+        will be set to this priority level.
+        
         """
-        count = self.deferred().count()
-        update_kwargs = dict(deferred=False, retries=models.F('retries')+1)
+        queryset = self.deferred()
+        if max_retries:
+            queryset.filter(retries__lte=max_retries)
+        count = queryset.count()
+        update_kwargs = dict(deferred=datetime.datetime.now(),
+                             retries=models.F('retries')+1)
         if new_priority is not None:
             update_kwargs['priority'] = new_priority
-        self.deferred().update(**update_kwargs)
+        queryset.update(**update_kwargs)
         return count
