@@ -78,16 +78,23 @@ def mail_managers(subject, message, fail_silently=False, priority=None):
     send_mail(subject, message, from_email, recipient_list, priority=priority)
 
 
-def queue_email_message(email_message, priority=None):
+def queue_email_message(email_message, fail_silently=False, priority=None):
     """
     Add new messages to the email queue.
     
     The ``email_message`` argument should be an instance of Django's core mail
     ``EmailMessage`` class.
+
+    The messages can be assigned a priority in the queue by using the
+    ``priority`` argument.
+    
+    The ``fail_silently`` argument is not used and is only provided to match
+    the signature of the ``EmailMessage.send`` function which it may emulate
+    (see ``queue_django_mail``).
     
     """
     from django_mailer import constants, models
-    
+
     if priority == constants.PRIORITY_EMAIL_NOW:
         return email_message.send()
 
