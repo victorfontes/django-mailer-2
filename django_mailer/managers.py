@@ -55,7 +55,7 @@ class QueueManager(models.Manager):
         """
         queryset = self.deferred()
         if max_retries:
-            queryset.filter(retries__lte=max_retries)
+            queryset = queryset.filter(retries__lte=max_retries)
         count = queryset.count()
         update_kwargs = dict(deferred=None, retries=models.F('retries')+1)
         if new_priority is not None:

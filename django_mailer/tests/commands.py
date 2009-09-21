@@ -42,6 +42,7 @@ class TestCommands(MailerTestCase):
         self.queue_message()
         self.queue_message(subject='deferred')
         self.queue_message(subject='deferred 2')
+        self.queue_message(subject='deferred 3')
         models.QueuedMessage.objects\
                     .filter(message__subject__startswith='deferred')\
                     .update(deferred=datetime.datetime.now())
@@ -49,5 +50,18 @@ class TestCommands(MailerTestCase):
         # Deferred messages are returned to the queue (nothing is sent).
         self.assertEqual(non_deferred_messages.count(), 1)
         call_command('retry_deferred', verbosity='0')
-        self.assertEqual(non_deferred_messages.count(), 3)
+        self.assertEqual(non_deferred_messages.count(), 4)
         self.assertEqual(len(mail.outbox), 0)
+        # Check the --max-retries logic.
+        models.QueuedMessage.objects\
+                    .filter(message__subject='deferred')\
+                    .update(deferred=datetime.datetime.now(), retries=2)
+        models.QueuedMessage.objects\
+                    .filter(message__subject='deferred 2')\
+                    .update(deferred=datetime.datetime.now(), retries=3)
+        models.QueuedMessage.objects\
+                    .filter(message__subject='deferred 3')\
+                    .update(deferred=datetime.datetime.now(), retries=4)
+        self.assertEqual(non_deferred_messages.count(), 1)
+        call_command('retry_deferred', verbosity='0', max_retries=3)
+        self.assertEqual(non_deferred_messages.count(), 3)
