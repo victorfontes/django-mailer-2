@@ -1,6 +1,5 @@
 from django.db import models
 from django_mailer import constants
-import datetime
 
 
 class QueueManager(models.Manager):
@@ -58,8 +57,7 @@ class QueueManager(models.Manager):
         if max_retries:
             queryset.filter(retries__lte=max_retries)
         count = queryset.count()
-        update_kwargs = dict(deferred=datetime.datetime.now(),
-                             retries=models.F('retries')+1)
+        update_kwargs = dict(deferred=None, retries=models.F('retries')+1)
         if new_priority is not None:
             update_kwargs['priority'] = new_priority
         queryset.update(**update_kwargs)
