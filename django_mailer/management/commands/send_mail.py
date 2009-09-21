@@ -9,7 +9,7 @@ import sys
 
 # Provide a way of temporarily pausing the sending of mail.
 PAUSE_SEND = getattr(settings, "MAILER_PAUSE_SEND", False)
-LOGGING_LEVEL = {'0': logging.CRITICAL, '1': logging.INFO, '2': logging.DEBUG}
+LOGGING_LEVEL = {'0': logging.ERROR, '1': logging.WARNING, '2': logging.INFO}
 
 class Command(NoArgsCommand):
     help = 'Iterate the mail queue, attempting to send all mail.'

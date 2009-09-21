@@ -93,9 +93,9 @@ def send_all(block_size=500):
 
     logging.debug("")
     if sent or deferred or skipped:
-        log = logging.info
+        log = logging.warning
     else:
-        log = logging.debug
+        log = logging.info
     log("%s sent, %s deferred, %s skipped." % (sent, deferred, skipped))
     logging.debug("Completed in %.2f seconds." % (time.time() - start_time))
 
@@ -174,8 +174,8 @@ def send_message(queued_message, smtp_connection=None, blacklist=None,
                 smtplib.SMTPRecipientsRefused,
                 smtplib.SMTPAuthenticationError), err:
             queued_message.defer()
-            logging.info("Message to %s deferred due to failure: %s" %
-                         (message.to_address.encode("utf-8"), err))
+            logging.warning("Message to %s deferred due to failure: %s" %
+                            (message.to_address.encode("utf-8"), err))
             log_message = unicode(err)
             result = constants.RESULT_FAILED
     if log:
