@@ -15,6 +15,7 @@ setup(
         'django_mailer',
         'django_mailer.management',
         'django_mailer.management.commands',
+        'django_mailer.tests',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
