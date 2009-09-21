@@ -6,8 +6,8 @@ Methods here actually handle the sending of queued messages.
 """
 from django.conf import settings
 from django.core.mail import SMTPConnection
+from django_mailer import constants, models, utils
 from lockfile import FileLock, AlreadyLocked, LockTimeout
-from django_mailer import constants, models
 from socket import error as SocketError
 import logging
 import smtplib
@@ -20,6 +20,8 @@ EMPTY_QUEUE_SLEEP = getattr(settings, "MAILER_EMPTY_QUEUE_SLEEP", 30)
 # Lock timeout value. how long to wait for the lock to become available.
 # default behavior is to never wait for the lock to be available.
 LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", -1)
+
+logger = logging.getLogger('django_mailer.engine')
 
 
 def _message_queue(block_size):
@@ -57,16 +59,16 @@ def send_all(block_size=500):
     """
     lock = FileLock("send_mail")
 
-    logging.debug("Acquiring lock...")
+    logger.debug("Acquiring lock...")
     try:
         lock.acquire(LOCK_WAIT_TIMEOUT)
     except AlreadyLocked:
-        logging.debug("Lock already in place. Exiting.")
+        logger.debug("Lock already in place. Exiting.")
         return
     except LockTimeout:
-        logging.debug("Waiting for the lock timed out. Exiting.")
+        logger.debug("Waiting for the lock timed out. Exiting.")
         return
-    logging.debug("Lock acquired.")
+    logger.debug("Lock acquired.")
 
     start_time = time.time()
 
@@ -87,17 +89,17 @@ def send_all(block_size=500):
                 skipped += 1
         connection.close()
     finally:
-        logging.debug("Releasing lock...")
+        logger.debug("Releasing lock...")
         lock.release()
-        logging.debug("Lock released.")
+        logger.debug("Lock released.")
 
-    logging.debug("")
+    logger.debug("")
     if sent or deferred or skipped:
-        log = logging.warning
+        log = logger.warning
     else:
-        log = logging.info
+        log = logger.info
     log("%s sent, %s deferred, %s skipped." % (sent, deferred, skipped))
-    logging.debug("Completed in %.2f seconds." % (time.time() - start_time))
+    logger.debug("Completed in %.2f seconds." % (time.time() - start_time))
 
 
 def send_loop(empty_queue_sleep=None):
@@ -113,7 +115,7 @@ def send_loop(empty_queue_sleep=None):
     empty_queue_sleep = empty_queue_sleep or EMPTY_QUEUE_SLEEP
     while True:
         while not models.QueuedMessage.objects.all():
-            logging.debug("Sleeping for %s seconds before checking queue "
+            logger.debug("Sleeping for %s seconds before checking queue "
                           "again." % empty_queue_sleep)
             time.sleep(empty_queue_sleep)
         send_all()
@@ -155,13 +157,13 @@ def send_message(queued_message, smtp_connection=None, blacklist=None,
 
     log_message = ''
     if blacklisted:
-        logging.info("Not sending to blacklisted email: %s" %
+        logger.info("Not sending to blacklisted email: %s" %
                      message.to_address.encode("utf-8"))
         queued_message.delete()
         result = constants.RESULT_SKIPPED
     else:
         try:
-            logging.info("Sending message to %s: %s" %
+            logger.info("Sending message to %s: %s" %
                          (message.to_address.encode("utf-8"),
                           message.subject.encode("utf-8")))
             opened_connection = smtp_connection.open()
@@ -174,7 +176,7 @@ def send_message(queued_message, smtp_connection=None, blacklist=None,
                 smtplib.SMTPRecipientsRefused,
                 smtplib.SMTPAuthenticationError), err:
             queued_message.defer()
-            logging.warning("Message to %s deferred due to failure: %s" %
+            logger.warning("Message to %s deferred due to failure: %s" %
                             (message.to_address.encode("utf-8"), err))
             log_message = unicode(err)
             result = constants.RESULT_FAILED

@@ -1,4 +1,10 @@
+import logging
+
+
 VERSION = (0, 1, 0, "alpha")
+
+logger = logging.getLogger('django_mailer')
+logger.setLevel(logging.DEBUG)
 
 
 def get_version():
