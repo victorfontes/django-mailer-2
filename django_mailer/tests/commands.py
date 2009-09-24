@@ -32,7 +32,6 @@ class TestCommands(MailerTestCase):
         self.assertEqual(queued_messages.count(), 1)
         self.assertEqual(len(mail.outbox), 2)
 
-
     def test_retry_deferred(self):
         """
         The ``retry_deferred`` command places deferred messages back in the
