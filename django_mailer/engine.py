@@ -6,7 +6,7 @@ Methods here actually handle the sending of queued messages.
 """
 from django.conf import settings
 from django.core.mail import SMTPConnection
-from django_mailer import constants, models, utils
+from django_mailer import constants, models
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 from socket import error as SocketError
 import logging
