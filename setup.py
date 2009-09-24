@@ -9,8 +9,8 @@ setup(
                  "(forked from James Tauber's django-mailer)"),
     long_description=open('docs/usage.txt').read(),
     author='Chris Beaven',
-    author_email='jtauber@jtauber.com',
-    url='http://code.google.com/p/django-mailer/',
+    author_email='smileychris@gmail.com',
+    url='http://github.com/SmileyChris/django-mailer-2',
     packages=[
         'django_mailer',
         'django_mailer.management',
