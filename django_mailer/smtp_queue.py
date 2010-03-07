@@ -13,7 +13,7 @@ class EmailBackend(BaseEmailBackend):
 
     '''
 
-    def send_messages(self, email_messages, priority=None):
+    def send_messages(self, email_messages):
         """
         Add new messages to the email queue.
 
@@ -29,18 +29,9 @@ class EmailBackend(BaseEmailBackend):
 
         from django_mailer import constants, models
 
-# BUGBUG - need to figure out what happens when
-#          priority is PRIORITY_EMAIL_NOW!
-#
-#        if priority == constants.PRIORITY_EMAIL_NOW:
-#            return email_message.send()
-
         num_sent = 0
         for email_message in email_messages:
             count = 0
-            # BUGBUG - Creating a new Message for each recipient seems wrong!
-            #          Every encoded_message includes all recipients, right?
-            #
             for to_email in email_message.recipients():
                 message = models.Message.objects.create(
                     to_address=to_email, from_address=email_message.from_email,
