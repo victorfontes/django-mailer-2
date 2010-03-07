@@ -13,7 +13,7 @@ class EmailBackend(BaseEmailBackend):
 
     '''
 
-    def send_messages(self, email_messages):
+    def send_messages(self, email_messages, priority=None):
         """
         Add new messages to the email queue.
 
