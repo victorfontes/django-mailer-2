@@ -21,11 +21,11 @@ def send_mail(subject, message, from_email, recipient_list,
     Add a new message to the mail queue.
 
     This is a replacement for Django's ``send_mail`` core email method.
-    
+
     The `fail_silently``, ``auth_user`` and ``auth_password`` arguments are
     only provided to match the signature of the emulated function. These
     arguments are not used.
-    
+
     """
     from django.core.mail import EmailMessage
     from django.utils.encoding import force_unicode
@@ -42,10 +42,10 @@ def mail_admins(subject, message, fail_silently=False, priority=None):
     administrators (defined in ``settings.ADMINS``).
 
     This is a replacement for Django's ``mail_admins`` core email method.
-    
+
     The ``fail_silently`` argument is only provided to match the signature of
     the emulated function. This argument is not used.
-    
+
     """
     from django.conf import settings
     from django.utils.encoding import force_unicode
@@ -67,10 +67,10 @@ def mail_managers(subject, message, fail_silently=False, priority=None):
     managers (defined in ``settings.MANAGERS``).
 
     This is a replacement for Django's ``mail_managers`` core email method.
-    
+
     The ``fail_silently`` argument is only provided to match the signature of
     the emulated function. This argument is not used.
-    
+
     """
     from django.conf import settings
     from django.utils.encoding import force_unicode
@@ -87,17 +87,17 @@ def mail_managers(subject, message, fail_silently=False, priority=None):
 def queue_email_message(email_message, fail_silently=False, priority=None):
     """
     Add new messages to the email queue.
-    
+
     The ``email_message`` argument should be an instance of Django's core mail
     ``EmailMessage`` class.
 
     The messages can be assigned a priority in the queue by using the
     ``priority`` argument.
-    
+
     The ``fail_silently`` argument is not used and is only provided to match
     the signature of the ``EmailMessage.send`` function which it may emulate
     (see ``queue_django_mail``).
-    
+
     """
     from django_mailer import constants, models
 
@@ -122,7 +122,7 @@ def queue_django_mail():
     """
     Monkey-patch the ``send`` method of Django's ``EmailMessage`` to just queue
     the message rather than actually send it.
-    
+
     """
     from django.core.mail import EmailMessage
 
@@ -138,7 +138,7 @@ def restore_django_mail():
     """
     Restore the original ``send`` method of Django's ``EmailMessage`` if it has
     been monkey-patched (otherwise, no action is taken).
-    
+
     """
     from django.core.mail import EmailMessage
 
