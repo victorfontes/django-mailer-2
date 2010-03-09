@@ -41,7 +41,13 @@ class Command(NoArgsCommand):
 
         # if PAUSE_SEND is turned on don't do anything.
         if not PAUSE_SEND:
-            send_all(block_size)
+            try:
+                # Django version >= 1.2
+                from django.core.mail import get_connection
+                send_all(block_size,
+                    backend='django.core.mail.backends.smtp.EmailBackend')
+            except ImportError:
+                send_all(block_size) # django version < 1.2
         else:
             logger = logging.getLogger('django_mailer.commands.send_mail')
             logger.warning("Sending is paused, exiting without sending "
