@@ -47,7 +47,8 @@ class Command(NoArgsCommand):
                 send_all(block_size,
                     backend='django.core.mail.backends.smtp.EmailBackend')
             except ImportError:
-                send_all(block_size) # django version < 1.2
+                # Django version <= 1.1
+                send_all(block_size)
         else:
             logger = logging.getLogger('django_mailer.commands.send_mail')
             logger.warning("Sending is paused, exiting without sending "

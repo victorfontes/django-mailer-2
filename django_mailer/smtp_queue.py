@@ -6,18 +6,6 @@ from django.core.mail.backends.base import BaseEmailBackend
 logger = logging.getLogger('django_mailer')
 logger.setLevel(logging.DEBUG)
 
-    
-def header_priority_val(str):
-    if not str:
-        return None
-    
-    from django_mailer import models
-
-    for t in models.PRIORITIES:
-        if t[1].lower() == str.lower():
-            return t[0]
-    return None
-
 
 class EmailBackend(BaseEmailBackend):
     '''
@@ -40,11 +28,12 @@ class EmailBackend(BaseEmailBackend):
         if not email_messages:
             return
 
-        from django_mailer import queue_email_message
+        from django_mailer import constants, queue_email_message
 
         num_sent = 0
         for email_message in email_messages:
-            priority = header_priority_val(email_message.extra_headers.pop('X-Mail-Queue-Priority', None))
+            priority = email_message.extra_headers.pop('X-Mail-Queue-Priority', None)
+            priority = constants.PRIORITIES.get(priority and priority.lower())
             queue_email_message(email_message, priority=priority)
             num_sent += 1
         return num_sent

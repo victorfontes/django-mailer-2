@@ -4,7 +4,6 @@ import datetime
 
 
 PRIORITIES = (
-    (constants.PRIORITY_EMAIL_NOW, 'now'),
     (constants.PRIORITY_HIGH, 'high'),
     (constants.PRIORITY_NORMAL, 'normal'),
     (constants.PRIORITY_LOW, 'low'),

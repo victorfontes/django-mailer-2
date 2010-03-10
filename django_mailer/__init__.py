@@ -100,9 +100,18 @@ def queue_email_message(email_message, fail_silently=False, priority=None):
 
     """
     from django_mailer import constants, models
-
+    from django_mailer.engine import send_message
+    
     if priority == constants.PRIORITY_EMAIL_NOW:
-        return email_message.send()
+        try:
+            # Django version >= 1.2
+            from django.core.mail import get_connection
+            connection = get_connection(backend='django.core.mail.backends.smtp.EmailBackend')
+            result = send_message(email_message, smtp_connection=connection)
+            return (result == constants.RESULT_SENT)
+        except ImportError:
+            # Django version <= 1.1
+            return email_message.send()
 
     count = 0
     for to_email in email_message.recipients():
