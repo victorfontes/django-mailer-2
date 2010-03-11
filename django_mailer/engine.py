@@ -5,18 +5,19 @@ Methods here actually handle the sending of queued messages.
 
 """
 from django.conf import settings
-try:
-    # Django version >= 1.2
-    from django.core.mail import get_connection
-except ImportError:
-    # Django version <= 1.1
-    from django.core.mail import SMTPConnection as get_connection
 from django_mailer import constants, models
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 from socket import error as SocketError
 import logging
 import smtplib
 import time
+try:
+    from django.core.mail import get_connection
+    EMAIL_BACKEND_SUPPORT = True
+except ImportError:
+    # Django version < 1.2
+    from django.core.mail import SMTPConnection as get_connection
+    EMAIL_BACKEND_SUPPORT = False
 
 
 # When queue is empty, how long to wait (in seconds) before checking again.
@@ -80,11 +81,9 @@ def send_all(block_size=500, backend=None):
     sent = deferred = skipped = 0
 
     try:
-        try:
-            # Django version >= 1.2
+        if EMAIL_BACKEND_SUPPORT:
             connection = get_connection(backend=backend)
-        except TypeError:
-            # Django version <= 1.1
+        else:
             connection = get_connection()
         blacklist = models.Blacklist.objects.values_list('email', flat=True)
         connection.open()
@@ -226,7 +225,7 @@ def send_message(email_message, smtp_connection=None):
         result = constants.RESULT_SENT
     except (SocketError, smtplib.SMTPSenderRefused,
             smtplib.SMTPRecipientsRefused,
-            smtplib.SMTPAuthenticationError), err:
+            smtplib.SMTPAuthenticationError):
         result = constants.RESULT_FAILED
 
     if opened_connection:

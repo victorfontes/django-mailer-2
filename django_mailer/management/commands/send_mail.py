@@ -6,6 +6,12 @@ from django_mailer.management.commands import create_handler
 from optparse import make_option
 import logging
 import sys
+try:
+    from django.core.mail import get_connection
+    EMAIL_BACKEND_SUPPORT = True
+except ImportError:
+    # Django version < 1.2
+    EMAIL_BACKEND_SUPPORT = False
 
 
 # Provide a way of temporarily pausing the sending of mail.
@@ -41,13 +47,11 @@ class Command(NoArgsCommand):
 
         # if PAUSE_SEND is turned on don't do anything.
         if not PAUSE_SEND:
-            try:
-                # Django version >= 1.2
-                from django.core.mail import get_connection
+            if EMAIL_BACKEND_SUPPORT:
+                # TODO: The real mail backend should be a setting.
                 send_all(block_size,
                     backend='django.core.mail.backends.smtp.EmailBackend')
-            except ImportError:
-                # Django version <= 1.1
+            else:
                 send_all(block_size)
         else:
             logger = logging.getLogger('django_mailer.commands.send_mail')

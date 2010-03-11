@@ -1,6 +1,12 @@
 from django.core import mail
 from django.test import TestCase
-from django_mailer import models, queue_email_message
+from django_mailer import queue_email_message
+try:
+    from django.core.mail import backends
+    EMAIL_BACKEND_SUPPORT = True
+except ImportError:
+    # Django version < 1.2
+    EMAIL_BACKEND_SUPPORT = False
 
 
 class FakeConnection(object):
@@ -19,9 +25,8 @@ class FakeConnection(object):
         message = mail.EmailMessage('SUBJECT', 'BODY', 'FROM', ['TO'])
         mail.outbox.append(message)
 
-try:
-    # only create TestEmailBackend class if Django version >= 1.2
-    from django.core.mail import backends
+
+if EMAIL_BACKEND_SUPPORT:
     class TestEmailBackend(backends.base.BaseEmailBackend):
         '''
         An EmailBackend used in place of the default
@@ -35,8 +40,6 @@ try:
         def send_messages(self, email_messages):
             pass
         
-except ImportError:
-    pass
 
 class MailerTestCase(TestCase):
     """
@@ -45,25 +48,19 @@ class MailerTestCase(TestCase):
     
     """
     def setUp(self):
-        try:
-            # Django version >= 1.2
-            from django.core.mail import backends
+        if EMAIL_BACKEND_SUPPORT:
             self.saved_email_backend = backends.smtp.EmailBackend
             backends.smtp.EmailBackend = TestEmailBackend
-        except ImportError:
-            # Django version <= 1.1
+        else:
             connection = mail.SMTPConnection
             if hasattr(connection, 'connection'):
                 connection.pretest_connection = connection.connection
             connection.connection = FakeConnection()
 
     def tearDown(self):
-        try:
-            # Django version >= 1.2
-            from django.core.mail import backends
+        if EMAIL_BACKEND_SUPPORT:
             backends.smtp.EmailBackend = self.saved_email_backend
-        except ImportError:
-            # Django version <= 1.1
+        else:
             connection = mail.SMTPConnection
             if hasattr(connection, 'pretest_connection'):
                 connection.connection = connection.pretest_connection

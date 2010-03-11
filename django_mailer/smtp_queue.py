@@ -1,10 +1,6 @@
 """Queued SMTP email backend class."""
 
-import logging
 from django.core.mail.backends.base import BaseEmailBackend
-
-logger = logging.getLogger('django_mailer')
-logger.setLevel(logging.DEBUG)
 
 
 class EmailBackend(BaseEmailBackend):
@@ -28,12 +24,10 @@ class EmailBackend(BaseEmailBackend):
         if not email_messages:
             return
 
-        from django_mailer import constants, queue_email_message
+        from django_mailer import queue_email_message
 
         num_sent = 0
         for email_message in email_messages:
-            priority = email_message.extra_headers.pop('X-Mail-Queue-Priority', None)
-            priority = constants.PRIORITIES.get(priority and priority.lower())
-            queue_email_message(email_message, priority=priority)
+            queue_email_message(email_message)
             num_sent += 1
         return num_sent

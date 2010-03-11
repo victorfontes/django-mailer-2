@@ -1,6 +1,5 @@
 import logging
 
-
 VERSION = (0, 1, 0, "alpha")
 
 logger = logging.getLogger('django_mailer')
@@ -100,17 +99,26 @@ def queue_email_message(email_message, fail_silently=False, priority=None):
 
     """
     from django_mailer import constants, models
-    from django_mailer.engine import send_message
-    
+    try:
+        from django.core.mail import get_connection
+        EMAIL_BACKEND_SUPPORT = True
+    except ImportError:
+        # Django version < 1.2
+        EMAIL_BACKEND_SUPPORT = False
+
+    if 'X-Mail-Queue-Priority' in email_message.extra_headers:
+        priority = email_message.extra_headers.pop('X-Mail-Queue-Priority')
+        priority = constants.PRIORITIES.get(priority.lower())
+
     if priority == constants.PRIORITY_EMAIL_NOW:
-        try:
-            # Django version >= 1.2
-            from django.core.mail import get_connection
-            connection = get_connection(backend='django.core.mail.backends.smtp.EmailBackend')
+        if EMAIL_BACKEND_SUPPORT:
+            from django_mailer.engine import send_message
+            # TODO: The real mail backend should be a setting.
+            connection = get_connection(
+                        backend='django.core.mail.backends.smtp.EmailBackend')
             result = send_message(email_message, smtp_connection=connection)
             return (result == constants.RESULT_SENT)
-        except ImportError:
-            # Django version <= 1.1
+        else:
             return email_message.send()
 
     count = 0
@@ -132,6 +140,8 @@ def queue_django_mail():
     Monkey-patch the ``send`` method of Django's ``EmailMessage`` to just queue
     the message rather than actually send it.
 
+    This method is only useful for Django versions < 1.2.
+
     """
     from django.core.mail import EmailMessage
 
@@ -147,6 +157,8 @@ def restore_django_mail():
     """
     Restore the original ``send`` method of Django's ``EmailMessage`` if it has
     been monkey-patched (otherwise, no action is taken).
+
+    This method is only useful for Django versions < 1.2.
 
     """
     from django.core.mail import EmailMessage
