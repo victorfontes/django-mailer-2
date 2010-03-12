@@ -1,6 +1,6 @@
 from django.core import mail
 from django.test import TestCase
-from django_mailer import models, queue_email_message
+from django_mailer import queue_email_message
 
 
 class FakeConnection(object):

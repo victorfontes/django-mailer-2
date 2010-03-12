@@ -11,7 +11,9 @@ from lockfile import FileLock, AlreadyLocked, LockTimeout
 from socket import error as SocketError
 import logging
 import smtplib
+import tempfile
 import time
+import os
 
 
 # When queue is empty, how long to wait (in seconds) before checking again.
@@ -20,6 +22,8 @@ EMPTY_QUEUE_SLEEP = getattr(settings, "MAILER_EMPTY_QUEUE_SLEEP", 30)
 # Lock timeout value. how long to wait for the lock to become available.
 # default behavior is to never wait for the lock to be available.
 LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", -1)
+
+LOCK_PATH = os.path.join(tempfile.gettempdir(), 'send_mail')
 
 logger = logging.getLogger('django_mailer.engine')
 
@@ -57,11 +61,14 @@ def send_all(block_size=500):
     of a large number of queued messages.
     
     """
-    lock = FileLock("send_mail")
+    lock = FileLock(LOCK_PATH)
 
     logger.debug("Acquiring lock...")
     try:
-        lock.acquire(LOCK_WAIT_TIMEOUT)
+        # lockfile has a bug dealing with a negative LOCK_WAIT_TIMEOUT (which
+        # is the default if it's not provided) systems which use a LinkFileLock
+        # so ensure that it is never a negative number.
+        lock.acquire(LOCK_WAIT_TIMEOUT and max(0, LOCK_WAIT_TIMEOUT))
     except AlreadyLocked:
         logger.debug("Lock already in place. Exiting.")
         return
