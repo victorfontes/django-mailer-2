@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
+from django.db import connection
 from django_mailer import models
 from django_mailer.engine import send_all
 from django_mailer.management.commands import create_handler
@@ -48,3 +49,8 @@ class Command(NoArgsCommand):
                            "queued mail.")
 
         logger.removeHandler(handler)
+
+        # Stop superfluous "unexpected EOF on client connection" errors in
+        # Postgres log files caused by the database connection not being
+        # explicitly closed.
+        connection.close()
