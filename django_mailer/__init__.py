@@ -1,7 +1,7 @@
 import logging
 
 
-VERSION = (1, 0, 1, "final")
+VERSION = (1, 0, 2, "final")
 
 logger = logging.getLogger('django_mailer')
 logger.setLevel(logging.DEBUG)
@@ -102,7 +102,12 @@ def queue_email_message(email_message, fail_silently=False, priority=None):
     from django_mailer import constants, models
 
     if priority == constants.PRIORITY_EMAIL_NOW:
-        return email_message.send()
+        if hasattr(email_message, '_actual_send') and\
+                callable(email_message._actual_send):
+            send_email = email_message._actual_send
+        else:
+            send_email = email_message.send
+        return send_email()
 
     count = 0
     for to_email in email_message.recipients():
