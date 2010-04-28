@@ -4,28 +4,17 @@ The "engine room" of django mailer.
 Methods here actually handle the sending of queued messages.
 
 """
-from django.conf import settings
-from django_mailer import constants, models
+from django_mailer import constants, models, settings
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 from socket import error as SocketError
 import logging
 import smtplib
 import time
-try:
+
+if constants.EMAIL_BACKEND_SUPPORT:
     from django.core.mail import get_connection
-    EMAIL_BACKEND_SUPPORT = True
-except ImportError:
-    # Django version < 1.2
+else:
     from django.core.mail import SMTPConnection as get_connection
-    EMAIL_BACKEND_SUPPORT = False
-
-
-# When queue is empty, how long to wait (in seconds) before checking again.
-EMPTY_QUEUE_SLEEP = getattr(settings, "MAILER_EMPTY_QUEUE_SLEEP", 30)
-
-# Lock timeout value. how long to wait for the lock to become available.
-# default behavior is to never wait for the lock to be available.
-LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", -1)
 
 logger = logging.getLogger('django_mailer.engine')
 
@@ -67,7 +56,7 @@ def send_all(block_size=500, backend=None):
 
     logger.debug("Acquiring lock...")
     try:
-        lock.acquire(LOCK_WAIT_TIMEOUT)
+        lock.acquire(settings.LOCK_WAIT_TIMEOUT)
     except AlreadyLocked:
         logger.debug("Lock already in place. Exiting.")
         return
@@ -81,7 +70,7 @@ def send_all(block_size=500, backend=None):
     sent = deferred = skipped = 0
 
     try:
-        if EMAIL_BACKEND_SUPPORT:
+        if constants.EMAIL_BACKEND_SUPPORT:
             connection = get_connection(backend=backend)
         else:
             connection = get_connection()
@@ -121,7 +110,7 @@ def send_loop(empty_queue_sleep=None):
     ``MAILER_EMPTY_QUEUE_SLEEP`` setting (or if not set, 30s is used).
 
     """
-    empty_queue_sleep = empty_queue_sleep or EMPTY_QUEUE_SLEEP
+    empty_queue_sleep = empty_queue_sleep or settings.EMPTY_QUEUE_SLEEP
     while True:
         while not models.QueuedMessage.objects.all():
             logger.debug("Sleeping for %s seconds before checking queue "

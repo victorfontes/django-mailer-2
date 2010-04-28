@@ -46,17 +46,16 @@ def mail_admins(subject, message, fail_silently=False, priority=None):
     the emulated function. This argument is not used.
 
     """
-    from django.conf import settings
+    from django.conf import settings as django_settings
     from django.utils.encoding import force_unicode
-    from django_mailer import constants
+    from django_mailer import constants, settings
 
     if priority is None:
-        priority = getattr(settings, 'MAILER_MAIL_ADMINS_PRIORITY',
-                           constants.PRIORITY_HIGH)
+        settings.MAIL_ADMINS_PRIORITY
 
-    subject = settings.EMAIL_SUBJECT_PREFIX + force_unicode(subject)
-    from_email = settings.SERVER_EMAIL
-    recipient_list = [recipient[1] for recipient in settings.ADMINS]
+    subject = django_settings.EMAIL_SUBJECT_PREFIX + force_unicode(subject)
+    from_email = django_settings.SERVER_EMAIL
+    recipient_list = [recipient[1] for recipient in django_settings.ADMINS]
     send_mail(subject, message, from_email, recipient_list, priority=priority)
 
 
@@ -71,15 +70,16 @@ def mail_managers(subject, message, fail_silently=False, priority=None):
     the emulated function. This argument is not used.
 
     """
-    from django.conf import settings
+    from django.conf import settings as django_settings
     from django.utils.encoding import force_unicode
+    from django_mailer import settings
 
     if priority is None:
-        priority = getattr(settings, 'MAILER_MAIL_MANAGERS_PRIORITY', None)
+        priority = settings.MAIL_MANAGERS_PRIORITY
 
-    subject = settings.EMAIL_SUBJECT_PREFIX + force_unicode(subject)
-    from_email = settings.SERVER_EMAIL
-    recipient_list = [recipient[1] for recipient in settings.MANAGERS]
+    subject = django_settings.EMAIL_SUBJECT_PREFIX + force_unicode(subject)
+    from_email = django_settings.SERVER_EMAIL
+    recipient_list = [recipient[1] for recipient in django_settings.MANAGERS]
     send_mail(subject, message, from_email, recipient_list, priority=priority)
 
 
@@ -98,24 +98,17 @@ def queue_email_message(email_message, fail_silently=False, priority=None):
     (see ``queue_django_mail``).
 
     """
-    from django_mailer import constants, models
-    try:
-        from django.core.mail import get_connection
-        EMAIL_BACKEND_SUPPORT = True
-    except ImportError:
-        # Django version < 1.2
-        EMAIL_BACKEND_SUPPORT = False
+    from django_mailer import constants, models, settings
 
-    if 'X-Mail-Queue-Priority' in email_message.extra_headers:
-        priority = email_message.extra_headers.pop('X-Mail-Queue-Priority')
+    if constants.PRIORITY_HEADER in email_message.extra_headers:
+        priority = email_message.extra_headers.pop(constants.PRIORITY_HEADER)
         priority = constants.PRIORITIES.get(priority.lower())
 
     if priority == constants.PRIORITY_EMAIL_NOW:
-        if EMAIL_BACKEND_SUPPORT:
+        if constants.EMAIL_BACKEND_SUPPORT:
+            from django.core.mail import get_connection
             from django_mailer.engine import send_message
-            # TODO: The real mail backend should be a setting.
-            connection = get_connection(
-                        backend='django.core.mail.backends.smtp.EmailBackend')
+            connection = get_connection(backend=settings.USE_BACKEND)
             result = send_message(email_message, smtp_connection=connection)
             return (result == constants.RESULT_SENT)
         else:
