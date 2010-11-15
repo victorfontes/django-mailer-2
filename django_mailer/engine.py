@@ -5,7 +5,7 @@ Methods here actually handle the sending of queued messages.
 
 """
 from django.conf import settings
-from django.core.mail import SMTPConnection, get_connection
+from django.core.mail import SMTPConnection
 from django_mailer import constants, models
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 from socket import error as SocketError
@@ -26,9 +26,6 @@ LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", -1)
 LOCK_PATH = os.path.join(tempfile.gettempdir(), 'send_mail')
 
 logger = logging.getLogger('django_mailer.engine')
-
-# The actual backend to use for sending, defaulting to the Django default.
-EMAIL_BACKEND = getattr(settings, "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 
 def _message_queue(block_size):
     """
@@ -86,8 +83,7 @@ def send_all(block_size=500):
     connection = None
     
     try:
-        if connection is None:
-                connection = get_connection(backend=EMAIL_BACKEND)
+        connection = SMTPConnection()
         blacklist = models.Blacklist.objects.values_list('email', flat=True)
         connection.open()
         for message in _message_queue(block_size):

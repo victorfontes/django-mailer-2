@@ -35,6 +35,14 @@ def send_mail(subject, message, from_email, recipient_list,
                                  recipient_list)
     queue_email_message(email_message, priority=priority)
 
+def send_mass_mail(datatuple, fail_silently=False, auth_user=None, auth_password=None, connection=None):
+
+    # datatuple: (subject, message, from_email, recipient_list)
+    for msg in datatuple:
+        send_mail(msg[0], msg[1], msg[2], msg[3])
+    
+    send_mail(subject, message, from_email, recipient_list, priority=priority)
+
 
 def mail_admins(subject, message, fail_silently=False, priority=None):
     """
